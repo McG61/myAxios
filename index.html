@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="myAxios.js"></script>
+<body>
+    <div>
+        <button class='fetchBtn'>获取数据</button>
+        <button class='addRequestBtn'>添加请求拦截器</button>
+        <button class='addResponseBtn'>添加响应拦截器</button>
+        <button class='ejectRequestBtn'>注销请求拦截器</button>
+        <button class='ejectResponseBtn'>注销响应拦截器</button>
+        <div>
+            <span>响应1内容：</span>
+            <span id='content1'></span>
+        </div>
+        <div>
+            <span>响应2内容：</span>
+            <span id='content2'></span>
+        </div>
+    </div>
+    <script>
+        let fetchBtn = document.querySelector('.fetchBtn');
+        let addRequestBtn = document.querySelector('.addRequestBtn');
+        let addResponseBtn = document.querySelector('.addResponseBtn');
+        let ejectRequestBtn = document.querySelector('.ejectRequestBtn');
+        let ejectResponseBtn = document.querySelector('.ejectResponseBtn');
+        let content1 = document.querySelector('#content1');
+        let content2 = document.querySelector('#content2');
+        // requestId, responseId为拦截器唯一标识，use注册函数返回值
+        let requestId, responseId, requestCancel;
+        
+        fetchBtn.onclick = () => {
+            myAxios.get('http://localhost:3001/getMethod').then(res => {
+                content1.innerHTML = res;
+                console.log('get', res);
+            }, err => {
+                console.log('get rejected', err);
+            });
+            myAxios({
+                method: 'post',
+                url: 'http://localhost:3001/postMethod'
+            }).then(res => {
+                content2.innerHTML = res;
+                console.log('post', res);
+            }, err => {
+                console.log('post rejected', err);
+            });
+        }
+
+        addRequestBtn.onclick = () => {
+            // 添加请求拦截器
+            typeof requestId !== 'number' && !requestId &&
+            (requestId = myAxios.interceptors.request.use(function (config) {
+              config.headers = 'application/json;charset=utf-8';
+              return config;
+            }, function (error) {
+                // 对请求错误进行处理
+                return Promise.reject(`未知异常：${error}`);
+            }));
+        }
+
+        addResponseBtn.onclick = () => {
+            // 添加响应拦截器
+            typeof responseId !== 'number' && !responseId  &&
+            (responseId = myAxios.interceptors.response.use(function (data) {
+                data = JSON.parse(data);
+                data.name = data.name + ' Morgan';
+                return JSON.stringify(data);
+            }, function (error) {
+                // 对响应错误进行处理
+                return Promise.reject(`未知异常：${error}`);
+            }));
+        }
+
+        ejectRequestBtn.onclick = () => {
+            // 取消注册的请求拦截器
+            myAxios.interceptors.request.eject(requestId);
+            // 清空用作测试逻辑，可以再次注册请求拦截器
+            requestId = null;
+        }
+
+        ejectResponseBtn.onclick = () => {
+            // 取消注册的响应拦截器
+            myAxios.interceptors.response.eject(responseId);
+            // 清空用作测试逻辑，可以再次注册响应拦截器
+            responseId = null;
+        }
+    </script>
+</body>
+</html>
