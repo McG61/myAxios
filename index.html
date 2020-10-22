@@ -9,6 +9,7 @@
 <body>
     <div>
         <button class='fetchBtn'>获取数据</button>
+        <button class='cancelBtn'>取消请求</button>
         <button class='addRequestBtn'>添加请求拦截器</button>
         <button class='addResponseBtn'>添加响应拦截器</button>
         <button class='ejectRequestBtn'>注销请求拦截器</button>
@@ -24,6 +25,7 @@
     </div>
     <script>
         let fetchBtn = document.querySelector('.fetchBtn');
+        let cancelBtn = document.querySelector('.cancelBtn');
         let addRequestBtn = document.querySelector('.addRequestBtn');
         let addResponseBtn = document.querySelector('.addResponseBtn');
         let ejectRequestBtn = document.querySelector('.ejectRequestBtn');
@@ -34,7 +36,13 @@
         let requestId, responseId, requestCancel;
         
         fetchBtn.onclick = () => {
-            myAxios.get('http://localhost:3001/getMethod').then(res => {
+            myAxios.get('http://localhost:3001/getMethod', {
+                cancelToken: new CancelToken(function executor(cancel) {
+                    requestCancel = cancel;
+                    console.log(cancel)
+                    // 这个参数 cancel 就是CancelToken构造函数里面自带的取消请求的函数，这里把该函数当参数用
+                })
+            }).then(res => {
                 content1.innerHTML = res;
                 console.log('get', res);
             }, err => {
@@ -49,6 +57,10 @@
             }, err => {
                 console.log('post rejected', err);
             });
+        }
+
+        cancelBtn.onclick = () => {
+            requestCancel('取消get请求');
         }
 
         addRequestBtn.onclick = () => {

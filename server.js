@@ -16,7 +16,7 @@ app.get('/getMethod', function(req, res){
         family: '摩根家族',
     };
     // res.statusCode = 300;
-    setTimeout(() => res.json(data), 2000);
+    setTimeout(() => res.json(data), 5000);
 });
 app.post('/postMethod', function(req, res){
     let data = {

@@ -1,5 +1,6 @@
 # myAxios
 实现目标：
+```
 /*
  * axios
  * http://www.axios-js.com/zh-cn/docs/ 
@@ -20,3 +21,4 @@
  *   .response.use()
  *   .response.eject()
  */
+```

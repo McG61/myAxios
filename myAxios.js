@@ -72,6 +72,23 @@ class MyAxios {
                     resolve(xhr.responseText);
                 }
                 xhr.send(data);
+                // 如果配置项带有cancelToken参数，支持取消请求
+                if (config.cancelToken) {
+                    // config.cancelToken.promise 为 CancelToken类中的this.promise;
+                    // 注册CancelToken实例属性promise的Fulfilled回调
+                    config.cancelToken.promise.then(function onCanceled(cancel) {
+                        // 该请求已完成，不做处理
+                        if (!xhr) {
+                            return;
+                        }
+                        // 取消请求
+                        xhr.abort();
+                        // 将dispatchRequest reject，cancel为config.cancelToken.promise reject的message
+                        reject(cancel);
+                        // 把该请求清空
+                        xhr = null;
+                    });
+                }
             })
         }
         // 发起请求任务
@@ -131,3 +148,30 @@ function CreateAxios(defaultConfig) {
     return instance;
 }
 let myAxios = CreateAxios();
+myAxios.Axios = MyAxios;
+
+function CancelToken(executor) {
+    let resolvePromise;
+    this.promise = new Promise((resolve, reject) => {
+      resolvePromise = resolve;
+    });
+  
+    let token = this;
+    executor(function cancel(message) {
+        if (token.reason) {
+            return;
+        }
+        // 保存取消message，作为是否已取消的标识
+        token.reason = new Cancel(message);
+        // 将this.promise状态改为Fulfilled，触发this.promise.then的Fulfilled回调
+        resolvePromise(token.reason);
+    });
+}
+
+function Cancel(message) {
+    this.message = message;
+}
+
+Cancel.prototype.toString = function toString() {
+    return 'Cancel' + (this.message ? ': ' + this.message : '');
+};
