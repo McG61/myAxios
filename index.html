@@ -41,9 +41,11 @@
         let content2 = document.querySelector('#content2');
         // requestId, responseId为拦截器唯一标识，use注册函数返回值
         let requestId, responseId, requestCancel;
-        let myAxios = axios.create();
-        myAxios.defaults.timeout = 10000;
-        myAxios.defaults.baseURL = 'http://localhost:3001';
+        let myAxios = axios.create({
+            baseURL: 'http://localhost:3001',
+            timeout: 1000,
+        });
+        myAxios.defaults.timeout = 20000;
         axios.defaults.baseURL = 'http://localhost:3001';
         const fetchDataByGet = () => {
             return axios.get('/getMethod', {
