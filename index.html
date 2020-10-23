@@ -5,10 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
+<style>
+    div {
+        margin-top: 10px;
+    }
+</style>
 <script src="myAxios.js"></script>
 <body>
     <div>
         <button class='fetchBtn'>获取数据</button>
+        <button class='batchFetchBtn'>并发获取数据</button>
         <button class='cancelBtn'>取消请求</button>
         <button class='addRequestBtn'>添加请求拦截器</button>
         <button class='addResponseBtn'>添加响应拦截器</button>
@@ -25,6 +31,7 @@
     </div>
     <script>
         let fetchBtn = document.querySelector('.fetchBtn');
+        let batchFetchBtn = document.querySelector('.batchFetchBtn');
         let cancelBtn = document.querySelector('.cancelBtn');
         let addRequestBtn = document.querySelector('.addRequestBtn');
         let addResponseBtn = document.querySelector('.addResponseBtn');
@@ -34,28 +41,56 @@
         let content2 = document.querySelector('#content2');
         // requestId, responseId为拦截器唯一标识，use注册函数返回值
         let requestId, responseId, requestCancel;
-        
-        fetchBtn.onclick = () => {
-            myAxios.get('http://localhost:3001/getMethod', {
+        let myAxios = axios.create();
+        myAxios.defaults.timeout = 10000;
+        myAxios.defaults.baseURL = 'http://localhost:3001';
+        axios.defaults.baseURL = 'http://localhost:3001';
+        const fetchDataByGet = () => {
+            return axios.get('/getMethod', {
                 cancelToken: new CancelToken(function executor(cancel) {
+                    // 这个参数 cancel 就是CancelToken构造函数里的取消请求的函数
                     requestCancel = cancel;
-                    console.log(cancel)
-                    // 这个参数 cancel 就是CancelToken构造函数里面自带的取消请求的函数，这里把该函数当参数用
+                })
+            });
+        }
+
+        const fetchDataByPost = () => {
+            return axios({
+                method: 'post',
+                url: '/postMethod'
+            });
+        }
+
+        fetchBtn.onclick = () => {
+            myAxios.get('/getMethod', {
+                cancelToken: new CancelToken(function executor(cancel) {
+                    // 这个参数 cancel 就是CancelToken构造函数里的取消请求的函数
+                    requestCancel = cancel;
                 })
             }).then(res => {
                 content1.innerHTML = res;
                 console.log('get', res);
-            }, err => {
-                console.log('get rejected', err);
+            }, error => {
+                console.log('get rejected', error);
             });
             myAxios({
                 method: 'post',
-                url: 'http://localhost:3001/postMethod'
+                url: '/postMethod'
             }).then(res => {
                 content2.innerHTML = res;
                 console.log('post', res);
-            }, err => {
-                console.log('post rejected', err);
+            }, error => {
+                console.log('post rejected', error);
+            });
+        }
+        // 并发请求，都返回成功后统一处理
+        batchFetchBtn.onclick = () => {
+            axios.all([fetchDataByGet(), fetchDataByPost()])
+            .then(axios.spread((getRes, postRes) => {
+                content1.innerHTML = getRes;
+                content2.innerHTML = postRes;
+            }), error => {
+                console.log('捕获：', error)
             });
         }
 

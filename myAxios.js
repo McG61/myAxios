@@ -16,6 +16,7 @@
  *   .request.use()
  *   .response.use()
  */
+const defaults = {};
 const getMethods = ['get', 'delete', 'head', 'options'];
 const postMethods = ['put', 'patch', 'post'];
 const defaultConfig = {
@@ -23,6 +24,45 @@ const defaultConfig = {
         'Accept': 'application/json, text/plain, */*'
     }
 };
+const valueFromConfig2Keys = ['url', 'method', 'data'];
+const mergeDeepPropertiesKeys = ['headers', 'auth', 'proxy', 'params'];
+const defaultToConfig2Keys = [
+    'baseURL', 'transformRequest', 'transformResponse', 'paramsSerializer',
+    'timeout', 'timeoutMessage', 'withCredentials', 'adapter', 'responseType', 'xsrfCookieName',
+    'xsrfHeaderName', 'onUploadProgress', 'onDownloadProgress', 'decompress',
+    'maxContentLength', 'maxBodyLength', 'maxRedirects', 'transport', 'httpAgent',
+    'httpsAgent', 'cancelToken', 'socketPath', 'responseEncoding'
+];
+function isUndefined(value) {
+    return typeof value === 'undefined';
+}
+function isObject(value) {
+    return typeof value === 'object' && value !== null;
+}
+
+// 仅做简单merge操作,毕竟是简单实现^0^
+function mergeConfig(config1, config2) {
+    config2 = config2 || {};
+    let config = {};
+    valueFromConfig2Keys.forEach(key => {
+        if(!isUndefined(config2[key])) {
+            config[key] = config2[key];
+        }
+    });
+    defaultToConfig2Keys.forEach(key => {
+        if(!isUndefined(config2[key])) {
+            config[key] = config2[key];
+        } else if (!isUndefined(config1[key])) {
+            config[key] = config1[key];
+        }
+    });
+    mergeDeepPropertiesKeys.forEach(key => {
+        if(isObject(config1[key]) || isObject(config2[key])) {
+            config[key] = {...(config1[key]||{}), ...(config2[key]||{})}
+        }
+    });
+    return config;
+}
 
 class InterceptorManager {
     constructor() {
@@ -36,7 +76,7 @@ class InterceptorManager {
         });
         return this.handlers.length - 1;
     }
-    // 删除
+    // 注销函数
     eject(id) {
         if (this.handlers[id]) {
             this.handlers[id] = null;
@@ -49,20 +89,25 @@ class InterceptorManager {
 }
 
 class MyAxios {
-    constructor() {
+    constructor(defaults) {
+        this.defaults = defaults;
+        console.log(222, this.defaults, defaults)
         this.interceptors = {
             request: new InterceptorManager(),
             response: new InterceptorManager()
         };
     }
     // request方法发起xhr请求并返回一个promise对象
-    request(config) {
-        
+    request = (config) => {
+        config = mergeConfig(this.defaults, config);
         // 请求拦截器和响应拦截器的本质就是一个实现特定功能的函数。
         // 只需要把一个完整的请求分成三步走，维护好一个任务队列的顺序，再依次执行就可
         let dispatchRequest = (config) => {
             return new Promise((resolve, reject) => {
-                let { url = '', method = 'get', data } = config;
+                let { url = '', method = 'get', data, baseURL } = config;
+                if(baseURL) {
+                    url = baseURL + url;
+                }
                 let xhr = new XMLHttpRequest();
                 xhr.open(method.toLowerCase(), url, true);
                 xhr.onload = () => {
@@ -71,7 +116,18 @@ class MyAxios {
                     }
                     resolve(xhr.responseText);
                 }
+                xhr.timeout = config.timeout;
                 xhr.send(data);
+                xhr.ontimeout = function handleTimeout() {
+                    let timeoutErrorMessage = '已超过' + config.timeout + '毫秒的超时时间';
+                    if (config.timeoutErrorMessage) {
+                      timeoutErrorMessage = config.timeoutErrorMessage;
+                    }
+                    reject(new Error(timeoutErrorMessage));
+              
+                    // 清除请求
+                    xhr = null;
+                };
                 // 如果配置项带有cancelToken参数，支持取消请求
                 if (config.cancelToken) {
                     // config.cancelToken.promise 为 CancelToken类中的this.promise;
@@ -133,8 +189,8 @@ postMethods.forEach(method => {
         }});
     }
 });
-// axios生成函数
-function CreateAxios(defaultConfig) {
+// axios实例生成函数
+function CreateAxiosInstance(defaultConfig) {
     // 创建axios实例
     let context = new MyAxios(defaultConfig);
     // 取得request方法并绑定上下文context
@@ -145,10 +201,9 @@ function CreateAxios(defaultConfig) {
     });
     // 将拦截器对象interceptors添加到instance上
     instance.interceptors = context.interceptors;
+    instance.defaults = context.defaults;
     return instance;
 }
-let myAxios = CreateAxios();
-myAxios.Axios = MyAxios;
 
 function CancelToken(executor) {
     let resolvePromise;
@@ -175,3 +230,22 @@ function Cancel(message) {
 Cancel.prototype.toString = function toString() {
     return 'Cancel' + (this.message ? ': ' + this.message : '');
 };
+
+let axios = CreateAxiosInstance(defaults);
+axios.Axios = MyAxios;
+axios.CancelToken = CancelToken;
+axios.Cancel = Cancel;
+// 支持处理并发请求，采用Promise.all方式
+axios.all = function all(promises) {
+    return Promise.all(promises);
+};
+// 进行spread处理，只是把<Array>res => {} 转成 (res1, res2, ...) => {}；更便捷获取到每个请求返回的响应
+axios.spread = function spread(callback) {
+    return function wrap(arr) {
+      return callback.apply(null, arr);
+    };
+};
+// axios生成函数
+axios.create = function create(instanceConfig) {
+    return CreateAxiosInstance(mergeConfig(axios.defaults, instanceConfig));
+}
