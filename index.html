@@ -37,6 +37,7 @@
         <span id='content2'></span>
     </div>
     <script>
+        let current = 0;
         let fetchBtn = document.querySelector('.fetchBtn');
         let batchFetchBtn = document.querySelector('.batchFetchBtn');
         let cancelBtn = document.querySelector('.cancelBtn');
@@ -70,7 +71,7 @@
         }
 
         const fetchDataByPost = () => {
-            return cacheRequest('/postMethod', {}, 'post');
+            return cacheRequest('/postMethod', {index: current++}, 'post');
         }
 
         // const fetchDataByPost = () => {
