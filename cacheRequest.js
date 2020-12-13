@@ -53,9 +53,17 @@ class ExpriesCache {
         return !ExpriesCache.isOverTime(name);
     }
 
-    // 删除 cache 中的 data
+    // 删除 cache 中的 某个请求接口的所有data
     static delete(name) {
-        return ExpriesCache.cacheMap.delete(name);
+        const keyList = ExpriesCache.cacheMap.keys();
+        for (let key of keyList) {
+            key.startsWith(name) && ExpriesCache.cacheMap.delete(key);
+        };
+    }
+
+    // 删除 cache 中的 单个data
+    static deleteWithParam(name) {
+        ExpriesCache.cacheMap.delete(name);
     }
 
     // 清空缓存 cache
