@@ -249,3 +249,5 @@ axios.spread = function spread(callback) {
 axios.create = function create(instanceConfig) {
     return CreateAxiosInstance(mergeConfig(axios.defaults, instanceConfig));
 }
+
+// export default axios;

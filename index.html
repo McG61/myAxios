@@ -10,7 +10,9 @@
         margin-top: 10px;
     }
 </style>
+<script src="util.js"></script>
 <script src="myAxios.js"></script>
+<script src="cacheRequest.js"></script>
 <body>
     <div>
         <button class='fetchBtn'>获取数据</button>
@@ -57,11 +59,16 @@
         }
 
         const fetchDataByPost = () => {
-            return axios({
-                method: 'post',
-                url: '/postMethod'
-            });
+            return cacheRequest('/postMethod', {}, 'post');
         }
+
+        // const fetchDataByPost = () => {
+        //     return axios({
+        //         method: 'post',
+        //         url: '/postMethod',
+        //         data: {}
+        //     });
+        // }
 
         fetchBtn.onclick = () => {
             myAxios.get('/getMethod', {
