@@ -3,9 +3,11 @@
 // 毫秒转化为秒
 const MS_TO_S = 1000;
 // 默认超时时间（秒）
-const DEFAULT_TIMEOUT = 1200;
+const DEFAULT_TIMEOUT = 3600;
 // 一天的秒数
 const DAY_TO_S = 86400;
+// 最大存储限制
+const MAX_SIZE = 25 * 1024;
 
 // map存储的对象类
 class ItemCache {
@@ -56,6 +58,16 @@ class ExpriesCache {
         return ExpriesCache.cacheMap.delete(name);
     }
 
+    // 清空缓存 cache
+    static clear() {
+        return ExpriesCache.cacheMap.clear();
+    }
+
+    // 查看当前缓存
+    static view() {
+        return ExpriesCache.cacheMap;
+    }
+
     // 获取
     static get(name) {
         const isDataOverTiem = ExpriesCache.isOverTime(name);
@@ -63,8 +75,9 @@ class ExpriesCache {
         return isDataOverTiem ? null : ExpriesCache.cacheMap.get(name).data;
     }
 
-    // 默认存储20分钟
-    static set(name, data, timeout = 1200) {
+    // 默认存储60分钟
+    static set(name, data, timeout = DEFAULT_TIMEOUT) {
+        console.log(ExpriesCache.cacheMap.size)
         // 设置 itemCache
         const itemCache = new ItemCache(data, timeout);
         //缓存
@@ -74,7 +87,10 @@ class ExpriesCache {
 
 // 生成key值错误
 const generateKeyError = new Error('Generate key error');
-
+// 非空判断
+const isEmpty = data => {
+    return data === null || data === undefined || typeof data === 'string' && data.trim() === '' || typeof data === 'object' && Object.keys(data).length < 1;
+}
 /**
  * 生成key值
  * @param {string} url	请求地址
@@ -87,7 +103,7 @@ const generateKey = (url, params) => {
 
     try {
         // 返回 字符串，请求地址 + 查询字符串
-        return `${url}:${paramsString}`;
+        return isEmpty(params) ? url : `${url}:${paramsString}`;
     } catch(_) {
         // 返回生成key错误
         return generateKeyError;
@@ -113,3 +129,21 @@ const cacheRequest = async (url, params, method = 'post') => {
     return data;
 };
 
+/**
+ * 强制缓存失效
+ * @param {boolean || string} clearKey 布尔值则代表是否清空所有缓存，字符串则代表需要失效缓存的接口名
+ */
+const clearRequestCache = (clearKey) => {
+    if(clearKey === true) {
+        return ExpriesCache.clear();
+    }
+    if(typeof clearKey === 'string') {
+        ExpriesCache.delete(clearKey);
+    }
+}
+
+const viewRequestCache = () => {
+    const cacheMap = ExpriesCache.view();
+    console.log('cacheMap =>', cacheMap);
+    return cacheMap;
+}

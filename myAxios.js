@@ -91,7 +91,6 @@ class InterceptorManager {
 class MyAxios {
     constructor(defaults) {
         this.defaults = defaults;
-        console.log(222, this.defaults, defaults)
         this.interceptors = {
             request: new InterceptorManager(),
             response: new InterceptorManager()

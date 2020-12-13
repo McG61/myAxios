@@ -22,14 +22,19 @@
         <button class='addResponseBtn'>添加响应拦截器</button>
         <button class='ejectRequestBtn'>注销请求拦截器</button>
         <button class='ejectResponseBtn'>注销响应拦截器</button>
-        <div>
-            <span>响应1内容：</span>
-            <span id='content1'></span>
-        </div>
-        <div>
-            <span>响应2内容：</span>
-            <span id='content2'></span>
-        </div>
+    </div>
+    <div>
+        <button class='clearBtn'>清空API缓存</button>
+        <button class='invalidBtn'>失效post缓存</button>
+        <button class='viewBtn'>查看API缓存</button>
+    </div>
+    <div>
+        <span>响应1内容：</span>
+        <span id='content1'></span>
+    </div>
+    <div>
+        <span>响应2内容：</span>
+        <span id='content2'></span>
     </div>
     <script>
         let fetchBtn = document.querySelector('.fetchBtn');
@@ -39,8 +44,14 @@
         let addResponseBtn = document.querySelector('.addResponseBtn');
         let ejectRequestBtn = document.querySelector('.ejectRequestBtn');
         let ejectResponseBtn = document.querySelector('.ejectResponseBtn');
+
+        let clearBtn = document.querySelector('.clearBtn');
+        let invalidBtn = document.querySelector('.invalidBtn');
+        let viewBtn = document.querySelector('.viewBtn');
+
         let content1 = document.querySelector('#content1');
         let content2 = document.querySelector('#content2');
+
         // requestId, responseId为拦截器唯一标识，use注册函数返回值
         let requestId, responseId, requestCancel;
         let myAxios = axios.create({
@@ -144,6 +155,18 @@
             myAxios.interceptors.response.eject(responseId);
             // 清空用作测试逻辑，可以再次注册响应拦截器
             responseId = null;
+        }
+
+        clearBtn.onclick = () => {
+            clearRequestCache(true);
+        }
+
+        invalidBtn.onclick = () => {
+            clearRequestCache('/postMethod');
+        }
+
+        viewBtn.onclick = () => {
+            viewRequestCache();
         }
     </script>
 </body>
