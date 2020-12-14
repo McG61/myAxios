@@ -6,8 +6,8 @@ const MS_TO_S = 1000;
 const DEFAULT_TIMEOUT = 3600;
 // 一天的秒数
 const DAY_TO_S = 86400;
-// 最大存储限制
-const MAX_SIZE = 25 * 1024;
+// 最大存储限制(20M)
+const MAX_SIZE = 20 * 1024 * 1024;
 
 // map存储的对象类
 class ItemCache {
@@ -51,6 +51,12 @@ class ExpriesCache {
     // 当前data在 cache 中是否存在且未超时
     static has(name) {
         return !ExpriesCache.isOverTime(name);
+    }
+
+    // 近似计算cache大小
+    static size() {
+        const values = ExpriesCache.cacheMap.values();
+        return calcMapSize(Array.from(values));
     }
 
     // 删除 cache 中的 某个请求接口的所有data
@@ -152,6 +158,7 @@ const clearRequestCache = (clearKey) => {
 
 const viewRequestCache = () => {
     const cacheMap = ExpriesCache.view();
-    console.log('cacheMap =>', cacheMap);
+    const cacheMapSize = ExpriesCache.size();
+    console.log('cacheMap =>', cacheMap, cacheMapSize);
     return cacheMap;
 }

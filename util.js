@@ -46,3 +46,36 @@ const queryString = {
 	  	return queryStr;
 	}
 };
+
+const ECMA_SIZES =  = {
+	STRING: 2,
+	BOOLEAN: 4,
+	NUMBER: 8
+}
+
+/**
+ * 近似计算数组对象内存大小
+ * @param {array} objList 
+ * @returns {number} bytes 所占内存大小
+ */
+function calcMapSize(objList) {
+    let objectList = [];
+    let stack = objList;
+    let bytes = 0;
+    while ( stack.length ) {
+        let value = stack.pop();
+        if ( typeof value === 'boolean' ) {
+            bytes += ECMA_SIZES.BOOLEAN;
+        } else if ( typeof value === 'string' ) {
+            bytes += value.length * ECMA_SIZES.STRING;
+        } else if ( typeof value === 'number' ) {
+            bytes += ECMA_SIZES.NUMBER;
+        } else if ( typeof value === 'object' && objectList.indexOf(value) === -1 ) {
+            objectList.push( value );
+            for( let i in value ) {
+                stack.push( value[i] );
+            }
+        }
+    }
+    return bytes;
+}
